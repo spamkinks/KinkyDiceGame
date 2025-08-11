@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinky BDSM Dice Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Styles */
+        :root {
+            --bg-color: #1a1a1a;
+            --primary-color: #b91c1c; /* A deep red */
+            --secondary-color: #4a044e; /* A deep purple */
+            --text-color: #f3f4f6;
+            --border-color: #4b5563;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            background-image: radial-gradient(circle at center, rgba(74, 4, 78, 0.3) 0%, rgba(26, 26, 26, 0) 70%);
+        }
+
+        h1, h2, h3, .cinzel {
+            font-family: 'Cinzel Decorative', cursive;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            width: 90vw;
+            height: 90vw;
+            max-width: 500px;
+            max-height: 500px;
+            border: 2px solid var(--primary-color);
+            border-radius: 1rem;
+            box-shadow: 0 0 20px var(--primary-color);
+            position: relative;
+        }
+
+        .board-square {
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .player-pawn {
+            position: absolute;
+            width: 7%;
+            height: 7%;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 15px white;
+            transition: all 0.5s ease-in-out;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Dice Styles */
+        .scene {
+            width: 100px;
+            height: 100px;
+            perspective: 400px;
+        }
+
+        .dice {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .face {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: #f8fafc;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-size: 60px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+        }
+        
+        .dot-container { display: grid; width: 80%; height: 80%; padding: 10%;}
+        .dot { background-color: var(--primary-color); border-radius: 50%;}
+
+        .face-1 .dot-container { grid-template-areas: ". . ." ". a ." ". . ."; }
+        .face-2 .dot-container { grid-template-areas: "a . ." ". . ." ". . b"; }
+        .face-3 .dot-container { grid-template-areas: "a . ." ". b ." ". . c"; }
+        .face-4 .dot-container { grid-template-areas: "a . b" ". . ." "c . d"; }
+        .face-5 .dot-container { grid-template-areas: "a . b" ". c ." "d . e"; }
+        .face-6 .dot-container { grid-template-areas: "a . b" "c . d" "e . f"; }
+
+        .face-1 .dot:nth-child(1) { grid-area: a; }
+        .face-2 .dot:nth-child(1) { grid-area: a; } .face-2 .dot:nth-child(2) { grid-area: b; }
+        .face-3 .dot:nth-child(1) { grid-area: a; } .face-3 .dot:nth-child(2) { grid-area: b; } .face-3 .dot:nth-child(3) { grid-area: c; }
+        .face-4 .dot:nth-child(1) { grid-area: a; } .face-4 .dot:nth-child(2) { grid-area: b; } .face-4 .dot:nth-child(3) { grid-area: c; } .face-4 .dot:nth-child(4) { grid-area: d; }
+        .face-5 .dot:nth-child(1) { grid-area: a; } .face-5 .dot:nth-child(2) { grid-area: b; } .face-5 .dot:nth-child(3) { grid-area: c; } .face-5 .dot:nth-child(4) { grid-area: d; } .face-5 .dot:nth-child(5) { grid-area: e; }
+        .face-6 .dot:nth-child(1) { grid-area: a; } .face-6 .dot:nth-child(2) { grid-area: b; } .face-6 .dot:nth-child(3) { grid-area: c; } .face-6 .dot:nth-child(4) { grid-area: d; } .face-6 .dot:nth-child(5) { grid-area: e; } .face-6 .dot:nth-child(6) { grid-area: f; }
+
+        .front  { transform: rotateY(  0deg) translateZ(50px); }
+        .back   { transform: rotateY(180deg) translateZ(50px); }
+        .right  { transform: rotateY( 90deg) translateZ(50px); } /* Face 4 */
+        .left   { transform: rotateY(-90deg) translateZ(50px); } /* Face 3 */
+        .top    { transform: rotateX( 90deg) translateZ(50px); }
+        .bottom { transform: rotateX(-90deg) translateZ(50px); }
+
+        .show-1 { transform: translateZ(-50px) rotateY(   0deg) rotateX(    0deg); }
+        .show-2 { transform: translateZ(-50px) rotateX( -90deg) rotateY(    0deg); }
+        .show-3 { transform: translateZ(-50px) rotateY( -90deg) rotateX(    0deg); } 
+        .show-4 { transform: translateZ(-50px) rotateY(  90deg) rotateX(    0deg); } 
+        .show-5 { transform: translateZ(-50px) rotateX(  90deg) rotateY(    0deg); }
+        .show-6 { transform: translateZ(-50px) rotateY(-180deg) rotateX(    0deg); }
+        
+        .level-card {
+            background-color: rgba(0,0,0,0.3);
+            border: 1px solid var(--secondary-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .level-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(74, 4, 78, 0.5);
+        }
+
+        .level-button, .roll-button {
+            background-color: var(--primary-color);
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+        .level-button:hover, .roll-button:hover {
+            background-color: #ef4444;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #ef4444;
+        }
+        .roll-button:disabled {
+            background-color: #4b5563;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        #action-icon {
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        @media (max-width: 768px) {
+            .board-square {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div id="game-container" class="w-full max-w-4xl mx-auto flex flex-col items-center justify-start gap-8 hidden">
+        <!-- Top Section: Controls -->
+        <div class="w-full max-w-md flex flex-col items-center gap-6 p-6 bg-black/30 rounded-2xl border border-red-800 shadow-lg shadow-red-900/50">
+            <h1 class="text-3xl md:text-4xl text-center text-red-500 cinzel">Kinky BDSM Game</h1>
+            <h3 id="level-indicator" class="text-xl text-purple-400 cinzel"></h3>
+            
+            <div class="scene">
+                <div id="dice" class="dice show-1">
+                    <div class="face front face-1"><div class="dot-container"><div class="dot"></div></div></div>
+                    <div class="face back face-6"><div class="dot-container"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                    <div class="face right face-4"><div class="dot-container"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                    <div class="face left face-3"><div class="dot-container"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                    <div class="face top face-5"><div class="dot-container"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                    <div class="face bottom face-2"><div class="dot-container"><div class="dot"></div><div class="dot"></div></div></div>
+                </div>
+            </div>
+
+            <button id="roll-button" class="roll-button text-white font-bold py-3 px-8 rounded-full text-xl cinzel">
+                Roll Dice
+            </button>
+            
+            <div id="action-display" class="bg-black/50 p-4 rounded-lg w-full min-h-[150px] text-center border border-gray-700 flex flex-col items-center justify-center">
+                <div id="action-icon" class="w-12 h-12 mb-2 text-purple-400 opacity-0"></div>
+                <h2 id="action-title" class="text-xl text-red-400 mb-2 cinzel">Welcome!</h2>
+                <p id="action-text" class="text-gray-300">Roll the dice to begin your journey.</p>
+                <button id="alternative-task-button" class="hidden mt-4 bg-purple-700 hover:bg-purple-600 text-sm py-1 px-3 rounded-md">Can't do it?</button>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-2">
+                <button onclick="showModal('rules-modal')" class="bg-gray-700 hover:bg-gray-600 text-sm py-1 px-3 rounded-md">Rules</button>
+                <button onclick="showModal('dares-modal')" class="bg-gray-700 hover:bg-gray-600 text-sm py-1 px-3 rounded-md">Dares</button>
+                <button onclick="resetGame()" class="bg-purple-800 hover:bg-purple-700 text-sm py-1 px-3 rounded-md">Change Level</button>
+            </div>
+        </div>
+
+        <!-- Bottom Section: Game Board -->
+        <div class="w-full flex items-center justify-center mt-8">
+            <div id="game-board" class="game-board">
+                <!-- Squares will be generated by JS -->
+                <div id="player-pawn" class="player-pawn"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Select Modal -->
+    <div id="level-select-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
+        <div class="bg-gray-800 border border-purple-700 rounded-lg shadow-lg p-6 sm:p-8 w-11/12 max-w-4xl text-center">
+            <h2 class="text-3xl text-purple-400 mb-6 cinzel">Choose Your Intensity</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Easy Level -->
+                <div class="level-card">
+                    <h3 class="text-2xl text-green-400 cinzel mb-4">Easy</h3>
+                    <div class="text-left text-sm text-gray-300 mb-6 h-32 overflow-y-auto">
+                        <p class="font-bold mb-2">Required Items:</p>
+                        <ul id="items-easy" class="list-disc list-inside"></ul>
+                    </div>
+                    <button onclick="startGame('Easy')" class="level-button bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg text-xl cinzel w-full">Start Easy</button>
+                </div>
+                <!-- Medium Level -->
+                <div class="level-card">
+                    <h3 class="text-2xl text-yellow-400 cinzel mb-4">Medium</h3>
+                    <div class="text-left text-sm text-gray-300 mb-6 h-32 overflow-y-auto">
+                        <p class="font-bold mb-2">Required Items:</p>
+                        <ul id="items-medium" class="list-disc list-inside"></ul>
+                    </div>
+                    <button onclick="startGame('Medium')" class="level-button bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-6 rounded-lg text-xl cinzel w-full">Start Medium</button>
+                </div>
+                <!-- Hard Level -->
+                <div class="level-card">
+                    <h3 class="text-2xl text-red-500 cinzel mb-4">Hard</h3>
+                    <div class="text-left text-sm text-gray-300 mb-6 h-32 overflow-y-auto">
+                        <p class="font-bold mb-2">Required Items:</p>
+                        <ul id="items-hard" class="list-disc list-inside"></ul>
+                    </div>
+                    <button onclick="startGame('Hard')" class="level-button bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-6 rounded-lg text-xl cinzel w-full">Start Hard</button>
+                </div>
+            </div>
+            <p class="text-gray-400 mt-6 text-sm">Select a level to begin. Consent and communication are key.</p>
+        </div>
+    </div>
+
+    <!-- Other Modals -->
+    <div id="rules-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-gray-800 border border-red-700 rounded-lg shadow-lg p-6 w-11/12 max-w-2xl max-h-[80vh] overflow-y-auto">
+            <h2 class="text-2xl text-red-500 mb-4 cinzel">Game Rules</h2>
+            <div id="rules-content" class="space-y-2 text-gray-300"></div>
+            <button onclick="hideModal('rules-modal')" class="mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Close</button>
+        </div>
+    </div>
+    <div id="dares-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-gray-800 border border-red-700 rounded-lg shadow-lg p-6 w-11/12 max-w-2xl max-h-[80vh] overflow-y-auto">
+            <h2 class="text-2xl text-red-500 mb-4 cinzel">Dares List</h2>
+            <div id="dares-content" class="space-y-2 text-gray-300"></div>
+            <button onclick="hideModal('dares-modal')" class="mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME DATA ---
+        const DARES_EASY = [
+            "Sub gives the Dom a 2-minute shoulder massage.", "Dom gently traces an ice cube over the sub's back.", "Sub must compliment the Dom for one minute straight.", "Dom chooses a piece of clothing for the Sub to remove.", "Sub must refer to the Dom by a title ('Master', 'Sir', etc.) for the next 3 rounds.", "Sub must give the Dom a new, worshipful title for the next 10 rounds.", "Dom takes a sensual, faceless photo of the sub's back or hands.", "Sub must kiss the Dom's hand.", "SPECIAL_ROLL_AGAIN", "Sub must serve the Dom a drink.", 
+            "Dom gives the sub 5 gentle spanks with their hand.", "Sub must ask for permission to speak for the next round.", "Sub must kneel before the Dom until their next turn.", "Dom gets to choose the next song that plays.", "Sub has to whisper something naughty to the Dom.", "Sub must wear a collar for the next 5 rounds.", "Dom can write a single word on the Sub's body with a marker.", "Sub must perform a sensual dance for the Dom for one minute.", "Dom can tickle the sub for 30 seconds.", "Sub must answer one question from the Dom truthfully.", 
+            "Sub must maintain eye contact with the Dom for one full minute.", "Dom can blindfold the sub for the next round.", "Sub must feed the Dom a piece of chocolate seductively.", "Dom can play with the sub's hair for a minute.", "Sub must describe their favorite feature of the Dom.", "Dom can give the sub a gentle hickey on their neck or shoulder.", "Sub must crawl for the next 2 minutes.", "Dom can put the sub in a simple stress position for 1 minute.", "Sub must lick a drop of chocolate off the Dom's finger.", "Dom can tie the sub's wrists loosely with a scarf.", 
+            "Sub must thank the Dom for their last command.", "Dom can gently finger the sub for 2 minutes.", "Sub must remain silent for the next 2 rounds.", "Dom can command the sub to do 10 pushups or situps.", "Sub must describe a simple fantasy.", "Dom can deny the sub a kiss.", "Sub must accept a simple gag, like a piece of cloth.", "Dom can drip cool water on the sub's stomach.", "Sub must lick their lips whenever the Dom commands for the next round.", "Dom can trace lines on the sub's skin with a feather or soft brush.", 
+            "Sub must worship the Dom's feet for 2 minutes.", "Dom can choose a 'safe word' for the sub to use.", "Sub must give the Dom a full body massage for 5 minutes.", "Dom can use a single ice cube on the sub's nipples.", "Sub must beg for their next command.", "Dom assigns a simple role to the sub for 10 minutes (e.g., pet).", "Sub must accept any position the Dom puts them in for 1 minute.", "Dom decides if the sub gets a small reward (a kiss) or a small punishment (a light spank).", "Sub must thank the Dom for any command given.", "Dom can restrain one of the sub's hands for the next 3 rounds.", 
+            "Sub must perform a task blindfolded.", "Dom can choose to end the game and claim their victory with a long kiss.", "Sub must give the Dom a sensual massage.", "Dom can use the sub as a footrest for 5 minutes.", "Sub must ask for permission before touching the Dom.", "Dom can command the sub to get them a drink.", "Dom can attach one cloth clip to a place of their choosing (e.g. earlobe).", "Sub must write 'I am yours' on their own thigh with a marker.", "Dom can lightly drag their nails across the sub's back.", "Sub must tell the Dom a secret desire.",
+            "Dom can put a leash on the sub's collar and lead them around the room.", "Sub must eat a piece of fruit from the floor without using their hands.", "Dom can draw a heart on the sub's cheek.", "Sub must remain on their knees for the next 3 rounds.", "Dom can choose one piece of the sub's clothing to wear.", "Sub must give the Dom a foot rub for 5 minutes.", "Dom can whisper a command in the sub's ear that must be obeyed immediately.", "Sub must describe what they like about being submissive.", "Dom can use a belt to lightly tap the sub's ass 5 times.", "Sub must stare at a candle flame for one minute without looking away.",
+            "Dom can bind the sub's ankles with a rope.", "Sub must lick a pattern onto the Dom's skin.", "Dom can choose a new, temporary name for the sub.", "Sub must act like the Dom's shadow, following them everywhere for 5 minutes.", "Dom can feed the sub a piece of chocolate, but only after they beg for it.", "Sub must compliment the Dom's hands.", "Dom can use a marker to draw 'property' on the sub's stomach.", "Sub must serve the Dom on all fours for the next 2 rounds.", "Dom can place three cloth clips on the sub's body.", "Sub must allow the Dom to take a photo of their bound wrists.",
+            "Dom can drip a small amount of warm (not hot) candle wax on the sub's back.", "Sub must ask for permission to sit down.", "Dom can choose a song for the sub to dance to, however they wish.", "Sub must tell the Dom what they want done to them most right now.", "Dom can lightly flog the sub's thighs with a scarf or tie.", "Sub must remain perfectly still for 2 minutes while the Dom teases them without touching.", "Dom can blindfold the sub and feed them different-tasting things (chocolate, fruit, ice).", "Sub must write a compliment to the Dom on a piece of paper with their non-dominant hand.", "Dom can use a rope to create a simple harness on the sub's chest.", "Dom can write a secret on the sub's back with their finger; sub has to guess what it is.", 
+            "Sub must remain on their hands and knees for the next 5 minutes.", "Dom can choose a body part for the sub to kiss (excluding lips).", "Sub has to compliment the Dom's voice.", "Dom can place a piece of ice in the sub's mouth.", "Sub must ask permission to look at the Dom for the next 3 rounds.", "Dom can draw a simple shape on the sub with chocolate syrup.", "Sub must remove one item of their own clothing.", "Dom can use a soft rope to tie the sub's hair.", "Sub must tell the Dom which dare they are most looking forward to.", "VICTORY: The Dom has won. They may choose any one action from the Easy Dares list or demand 10 minutes of worship."
+        ];
+        
+        const DARES_MEDIUM = [
+            "Sub must clean the Dom's shoes with their tongue.", "Dom can use a belt for 10 strikes on the sub's ass.", "A dom outdoors can spank the submissive.", "The sub can be gagged with a ball gag.", "A sub can be spanked at any time, without warning.", "Dom can choose a 'punishment' position for the sub to assume whenever they displease the Dom for the rest of the game.", "Dom needs to fulfill one of the sub's stated desires.", "Worship the master's body for 10 minutes.", "SPECIAL_ROLL_AGAIN", "Sub must remain in a stressful position chosen by the Dom for 3 minutes.", 
+            "Dom chooses two pieces of clothing for the Sub to remove.", "Dom can attach 5 cloth clips to the sub's nipples and inner thighs.", "Sub gets 20 spanks with a paddle or belt.", "Sub must lick any spot on the Dom's body, as chosen by the Dom.", "Dom can use ice and warm wax (safely!) on the Sub's body.", "Sub must remain blindfolded and gagged for the next 3 rounds.", "Dom can write a degrading word on the Sub's body with a marker.", "Sub must compliment the Dom's power and authority for two minutes straight.", "Dom can restrain the sub's hands and feet with rope.", "Sub must answer any three questions from the Dom truthfully, no matter how personal.", 
+            "Dom can bring the sub to the edge of orgasm with their hand, then stop.", "Sub must wear a collar and leash for the rest of the game; Dom can lead them by it.", "Dom can tie up the Sub in a simple rope bondage tie (e.g., a basic chest harness).", "Sub has to whisper their deepest fear to the Dom.", "Dom gets to choose a humiliating ringtone for the sub's phone for 24 hours.", "Sub must perform a striptease for the Dom.", "Dom can give the sub a very visible hickey.", "Sub must ask for permission for any movement for the next 10 minutes.", "Sub must massage the Dom's feet with their tongue.", "Dom can tease the sub with a belt or flogger, getting close but not hitting.", 
+            "Sub must feed the Dom while kneeling.", "Sub must kneel on an uncomfortable surface (like a balled-up rope) for 2 minutes.", "Dom can drip warm candle wax on the Sub's ass or back.", "Sub must describe a detailed fantasy involving the Dom.", "Dom can use a belt or flogger on the sub 15 times.", "Sub must refer to the Dom only by their full, formal title for the rest of the game.", "Dom can deny the sub an orgasm for the rest of the night.", "Sub must accept any gag the Dom offers, no matter how challenging.", "Dom can put the sub in a confined space (like a closet) for 5 minutes.", "Sub must lick the Dom's armpit.", 
+            "Dom can use cloth clips as nipple clamps and pull on them gently.", "Sub must remain completely silent and only communicate through gestures for 5 minutes.", "Dom can command the sub to hold a physically demanding pose until release.", "Sub must lick a toilet seat clean (or a similarly humiliating task).", "Dom can choose a humiliating 'pet name' for the sub to respond to.", "Sub must give the Dom a full body massage using only their mouth.", "Dom can use their hands to bring the sub to orgasm, but only if they beg properly.", "Sub must accept any sexual position the Dom puts them in without complaint.", "Dom decides if the sub gets a reward (oral sex) or a punishment (canning).", "Sub must thank the Dom profusely after every command or action.", 
+            "Dom can take a revealing photo of the sub and keep it.", "Dom can use a marker to draw 'Property of [Dom's Name]' on the sub.", "Dom can choose to end the game and claim their victory, which involves a full scene of the Dom's choosing.", "Sub must perform oral sex on the Dom to completion.", "Dom can use the sub as their personal furniture (footstool, table) for 15 minutes.", "Sub must beg and plead for their next command, detailing why they deserve it.", "Dom can use a rope to tie one of the sub's limbs to a piece of furniture.", "Sub must allow the Dom to draw all over their body with markers.", "Dom can use a belt to bind the sub's wrists behind their back.", "Sub must eat their meal from a bowl on the floor, without using hands.",
+            "Dom can attach 10 cloth clips to sensitive spots on the sub's body.", "Sub must remain in a simple rope tie for the next 5 rounds.", "Dom can use melted chocolate to write a word on the sub, which they must then lick off.", "Sub must perform 20 pushups with the Dom's foot on their back.", "Dom can use a single-tail whip (like a belt) to 'draw' a shape on the sub's back.", "Sub must remain gagged with their own underwear.", "Dom can use warm wax to create a 'bra' on the sub's chest.", "Sub must give the Dom a lap dance.", "Dom can use rope to create a leash and walk the sub around the room on all fours.", "Sub must accept being used as a canvas for body-safe paint.",
+            "Dom can choose 3 spots on the sub's body to spank, 5 times each.", "Sub must remain blindfolded while the Dom teases them with different textures (feather, ice, rope, belt).", "Dom can tie the sub's hands to their ankles.", "Sub must write a 50-word story about their submission.", "Dom can use cloth clips to hold a piece of ice to a sensitive spot.", "Sub must allow the Dom to style their hair in a humiliating way.", "Dom can drip wax down the sub's spine.", "Sub must lick the Dom's neck and ears.", "Dom can use a marker to tally every spank on the sub's ass.", "Sub must accept 10 strikes from a belt on their thighs.",
+            "Dom can use a marker to draw a 'leash' from the collar down the sub's chest.", "Sub must remain gagged with a cloth for 10 minutes.", "Dom can drip hot wax onto a plate and press the sub's hand into the cooled (but still warm) wax.", "Sub must allow the Dom to use 5 cloth clips on their back and chest.", "Dom can tie the sub's wrists and ankles together behind their back.", "Sub must lick chocolate syrup off the Dom's fingers.", "Dom can use a paddle to leave a red mark on each of the sub's ass cheeks.", "Sub must remain blindfolded while the Dom whispers commands from different parts of the room.", "Dom can use rope to create a 'hobble' for the sub's ankles.", "Sub must allow the Dom to write a list of their 'flaws' on their body with a marker.",
+            "Dom can use ice to tease the sub's genitals without allowing orgasm.", "Sub must endure 10 spanks with a bare hand, as hard as the Dom wishes.", "Dom can attach cloth clips to the sub's ears and gently tug.", "Sub must lick a clean path on the floor for the Dom to walk on.", "Dom can use a rope to bind the sub's chest, restricting their breathing slightly.", "Sub must describe in detail how they would serve the Dom for a day.", "Dom can use a belt to leave a visible mark on the sub's ass.", "Sub must hold a piece of ice in their mouth until it melts completely.", "VICTORY: The Dom has complete control. They may choose any two actions from the Medium Dares list or create their own complex command."
+        ];
+        
+        const DARES_HARD = [
+            "Public Play: Sub must wear a collar under their clothes on the next outing.", "Dom performs a full, intricate rope bondage suspension or tie.", "Public Play: Dom spanks the submissive in a public but secluded area (e.g., empty parking garage).", "Sub is gagged with a harness gag and must wear it for 30 minutes.", "Impact Play: Dom can use any implement (belt, cane, paddle) for a 10-minute session.", "The Dom can declare one part of the sub's body 'off-limits' for the sub to touch for the rest of the game.", "Dom's Fantasy: The Dom describes their ultimate fantasy, and the sub must agree to act it out at a later date.", "Total Worship: Sub must worship the Dom's entire body for 20 minutes, as directed.", "SPECIAL_ROLL_AGAIN", "Sub must remain in a complex stress position until the Dom shows mercy.", 
+            "Sub must be completely nude for the rest of the game.", "Golden Shower: Sub must accept a golden shower on their body from the Dom.", "Sub receives 20 strikes with a cane or heavy belt.", "Sub must lick the Dom clean after they use the toilet.", "Extreme Temperature Play: Dom alternates between ice and hot wax on the sub's most sensitive areas.", "Total Deprivation: Sub is blindfolded, gagged, and has their ears plugged for 10 minutes.", "Dom can write a permanent or long-lasting degrading message on the Sub's body.", "Sub must write and recite a poem about their submission to the Dom.", "Sub must remain fully restrained in rope or cuffs for the next hour.", "The Dom can ask the sub any question, and can use punishment to extract the truth if they suspect a lie.", 
+            "Extreme Edging: The Dom will use their hands to bring the sub to the edge of orgasm repeatedly for 30 minutes, with no guarantee of release.", "Sub must wear a leash and be led on a walk outside (in a private area).", "Dom can perform a complex rope tie that restricts movement significantly.", "Sub must confess their most shameful secret.", "Dom takes control of the sub's social media for one hour.", "Sub must perform a striptease and self-bondage routine as directed by the Dom.", "Dom can brand the sub with a temporary tattoo or marking of ownership.", "Sub must ask for permission for everything, including breathing, for 15 minutes.", "Sub must serve as the Dom's ashtray (if applicable and safe) or lick their shoes clean.", "Dom can use any and all non-electric toys on the sub as they see fit for a 15-minute period.", 
+            "Sub must eat their meal from a bowl on the floor, without using hands.", "Sub must kneel on a sharp or painful surface (like uncooked rice) for as long as the Dom commands.", "Dom can use the sub's body for kinky photography, with no limits on poses.", "Sub must write a story detailing their complete submission to the Dom.", "Impact Play: Sub must endure a scene with a dragon's tail or other heavy thuddy toy.", "Sub must address the Dom as 'God' or 'Goddess' for the rest of the night.", "The Dom can enforce a full chastity period of a length of their choosing (e.g., 24 hours).", "Sub must accept a medical-style gag or speculum.", "Sub must spend 20 minutes in a small, dark space (e.g., closet) as sensory deprivation.", "Sub must lick any part of the Dom, inside or out.", 
+            "Dom can use a network of cloth clips and rope to create a sensory experience.", "Sub is forbidden from speaking and must only use animal noises to communicate.", "Dom can use the sub for their own physical workout (e.g., as a weight).", "Sub must accept safe anal play from the Dom.", "Dom can choose a permanent pet name or title for the sub.", "Sub must act as the Dom's slave for the next hour, anticipating every need.", "Dom can use anal hooks or beads on the sub.", "Sub must agree to a full role-play scenario of the Dom's choosing, no matter how intense.", "Dom's Choice: The Dom can choose any dare from any list (Easy, Medium, or Hard).", "Sub must thank the Dom for their punishments.", 
+            "Dom can take and share a faceless, kinky photograph of the sub with a trusted friend.", "Dom can use rope and cloth clips to suspend the sub's limbs.", "Dom can choose to end the game and claim their victory, which is a 24-hour period of total control over the sub.", "Sub must perform oral sex on the Dom while in bondage.", "Dom can use the sub's body completely as furniture, including sitting or standing on them (safely).", "Sub must perform a humiliating act of the Dom's choosing in front of a mirror.", "Dom can cover the sub's body in chocolate syrup and lick it off.", "Sub must be fully tied in a hogtie position for 15 minutes.", "Dom can use a marker to draw a 'target' on the sub's ass before a spanking session.", "Sub must accept a 'human shield' role, taking light impacts meant for a pillow.",
+            "Dom can use clothespins on the sub's entire body.", "Sub must be subjected to a 'tickle torture' session while restrained.", "Dom can create a full body rope harness on the sub.", "Sub must drink a glass of water from a bowl on the floor like a dog.", "Dom can use a belt to create a makeshift harness and leash.", "Sub must be completely covered in writing by the Dom using markers.", "Dom can use ice and wax simultaneously on different parts of the sub's body.", "Sub must remain in a complex bondage tie for 30 minutes.", "Dom can use the sub as a canvas for a full body painting session with chocolate and syrups.", "Sub must endure a 'mummification' using soft ropes or scarves, covering most of their body for 10 minutes.",
+            "Dom can use a marker to write instructions on the sub's body for later use.", "Sub must accept a 'human canvas' role, allowing the Dom to paint them with chocolate and syrups.", "Dom can use a heavy belt for 10 hard strikes across the sub's back.", "Sub must be tied spread-eagle on the bed for 15 minutes while the Dom teases them.", "Dom can create a 'spiderweb' of rope on the sub's torso that restricts movement.", "Sub must accept having their mouth taped shut for 10 minutes.", "Dom can use hot and cold wax play on the sub's stomach and thighs simultaneously.", "Sub must lick the entire length of the Dom's belt clean.", "Dom can attach a cloth clip to the sub's tongue for 30 seconds.", "VICTORY: The Dom has achieved absolute power. The sub is now the Dom's property for the remainder of the night, with no limits other than established safe words."
+        ];
+
+        const ITEMS_EASY = ["Ice cube", "Collar", "Blindfold", "Scarf / Soft ties", "Marker", "Snacks / Chocolate", "Cloth Clips", "Belt", "Rope"];
+        const ITEMS_MEDIUM = [...ITEMS_EASY, "Ball gag", "Paddle", "Candle (for wax)", "Leash"];
+        const ITEMS_HARD = [...ITEMS_MEDIUM, "Cane / Heavy flogger", "Harness gag", "Restraints / Cuffs", "Body-safe paint"];
+
+        const RULES = [ "<strong>Disclaimer:</strong> This game is intended for consenting adults. Communication, safety, and the use of a safe word are paramount. Always respect boundaries and ensure all activities are Safe, Sane, and Consensual (SSC).", "The Dom and Sub should discuss limits and preferences before starting the game.", "A dom can give a punishment if a sub is not able to complete a task given by the dom.", "Sub can choose to use a safe word at any time to pause or stop the game. This must be respected immediately.", "A sub has to agree to everything the dom says and has to obey his commands, within the pre-agreed boundaries.", "The sub has to say 'Yes, Master/Mistress' to every command.", ];
+        const FORFEITS = [ "Drink a shot.", "Remove a piece of clothing.", "Let the Dom choose a punishment.", "Get spanked 10 times.", "Kiss the Dom's feet.", "Stay in a stressful position for 5 minutes.", "Get blindfolded for the next 3 rounds.", "Serve the Dom a drink while crawling.", ];
+
+        const ICONS = {
+            worship: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-6 4.5c.69 1.62 2.16 2.96 4 3.5V18h4v-1.5c1.84-.54 3.31-1.88 4-3.5H6z"/></svg>`,
+            impact: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>`,
+            bondage: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-4-8c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm8 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z"/></svg>`,
+            sensory: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 13C9.24 17.5 7 15.26 7 12.5S9.24 7.5 12 7.5s5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`,
+            command: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16h3v3h2v-3h4v3h2v-3h3v-2H5v2zm14-10H5v2h14V6zM5 10h14v2H5v-2z"/></svg>`,
+            special: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
+        };
+
+        // --- GAME LOGIC ---
+        const gameContainer = document.getElementById('game-container');
+        const levelSelectModal = document.getElementById('level-select-modal');
+        const boardEl = document.getElementById('game-board');
+        const pawnEl = document.getElementById('player-pawn');
+        const diceEl = document.getElementById('dice');
+        const rollButton = document.getElementById('roll-button');
+        const actionDisplayEl = document.getElementById('action-display');
+        const actionTitleEl = document.getElementById('action-title');
+        const actionTextEl = document.getElementById('action-text');
+        const actionIconEl = document.getElementById('action-icon');
+        const levelIndicatorEl = document.getElementById('level-indicator');
+        const altTaskButton = document.getElementById('alternative-task-button');
+
+        let currentPosition = 0;
+        let boardSquares = [];
+        let selectedDaresArray = [];
+        let gameInitialized = false;
+        let BOARD_PATH_INDICES = [];
+
+        function generateSpiralPath() {
+            const path = new Array(100);
+            let x = 0, y = 0, dx = 1, dy = 0;
+            let minX = 0, maxX = 9, minY = 1, maxY = 9;
+            for (let i = 0; i < 100; i++) {
+                path[i] = y * 10 + x;
+                if (dx === 1 && x === maxX) { dx = 0; dy = 1; maxX--; }
+                else if (dy === 1 && y === maxY) { dx = -1; dy = 0; maxY--; }
+                else if (dx === -1 && x === minX) { dx = 0; dy = -1; minX++; }
+                else if (dy === -1 && y === minY) { dx = 1; dy = 0; minY++; }
+                x += dx;
+                y += dy;
+            }
+            return path;
+        }
+
+        function startGame(level) {
+            levelSelectModal.classList.remove('flex');
+            levelSelectModal.classList.add('hidden');
+            gameContainer.style.display = 'flex';
+
+            if (level === 'Easy') selectedDaresArray = DARES_EASY;
+            if (level === 'Medium') selectedDaresArray = DARES_MEDIUM;
+            if (level === 'Hard') selectedDaresArray = DARES_HARD;
+            
+            levelIndicatorEl.textContent = `${level} Level`;
+
+            if (!gameInitialized) {
+                BOARD_PATH_INDICES = generateSpiralPath();
+                createBoard();
+                gameInitialized = true;
+            }
+            
+            resetBoardState();
+            populateModals();
+        }
+        
+        function resetGame() {
+            gameContainer.style.display = 'none';
+            levelSelectModal.classList.remove('hidden');
+            levelSelectModal.classList.add('flex');
+            resetBoardState();
+        }
+        
+        function resetBoardState() {
+            currentPosition = 0;
+            updatePawnPosition();
+            actionTitleEl.textContent = 'Welcome!';
+            actionTextEl.textContent = 'Roll the dice to begin your journey.';
+            rollButton.disabled = false;
+            rollButton.textContent = "Roll Dice";
+            diceEl.className = 'dice show-1';
+            altTaskButton.classList.add('hidden');
+            actionIconEl.classList.add('opacity-0');
+        }
+
+        function createBoard() {
+            for (let i = 0; i < 100; i++) {
+                const square = document.createElement('div');
+                square.classList.add('board-square');
+                const squareNum = BOARD_PATH_INDICES.indexOf(i) + 1;
+                if (squareNum > 0) {
+                    square.textContent = squareNum;
+                }
+                boardEl.appendChild(square);
+                boardSquares.push(square);
+            }
+            updatePawnPosition();
+        }
+
+        function updatePawnPosition() {
+            if (currentPosition === 0) {
+                pawnEl.style.top = `103%`;
+                pawnEl.style.left = `-10%`;
+                return;
+            }
+            
+            const boardIndex = BOARD_PATH_INDICES[currentPosition - 1];
+            if (boardIndex === undefined) return;
+            
+            const row = Math.floor(boardIndex / 10);
+            const col = boardIndex % 10;
+
+            pawnEl.style.top = `${row * 10 + 1.5}%`;
+            pawnEl.style.left = `${col * 10 + 1.5}%`;
+        }
+        
+        function rollDice() {
+            rollButton.disabled = true;
+            altTaskButton.classList.add('hidden');
+            actionIconEl.classList.add('opacity-0');
+            actionTitleEl.textContent = 'Rolling...';
+            actionTextEl.textContent = 'The dice will decide your fate.';
+
+            const roll = Math.floor(Math.random() * 6) + 1;
+
+            const randomX = (Math.floor(Math.random() * 4) + 4) * 90;
+            const randomY = (Math.floor(Math.random() * 4) + 4) * 90;
+            diceEl.style.transform = `rotateX(${randomX}deg) rotateY(${randomY}deg)`;
+            
+            setTimeout(() => {
+                diceEl.className = 'dice';
+                void diceEl.offsetWidth;
+                diceEl.classList.add(`show-${roll}`);
+            }, 0);
+
+            setTimeout(() => {
+                handleMove(roll);
+            }, 1800);
+        }
+
+        function handleMove(roll) {
+            actionTextEl.textContent = `You rolled a ${roll}.`;
+            currentPosition += roll;
+
+            if (currentPosition > 100) {
+                currentPosition = 100;
+            }
+
+            updatePawnPosition();
+
+            setTimeout(() => {
+                triggerAction();
+            }, 800);
+        }
+        
+        function getIconForDare(dareText) {
+            const lowerText = dareText.toLowerCase();
+            if (lowerText.includes('worship') || lowerText.includes('kiss') || lowerText.includes('lick') || lowerText.includes('beg')) return ICONS.worship;
+            if (lowerText.includes('spank') || lowerText.includes('whip') || lowerText.includes('flogger') || lowerText.includes('strike') || lowerText.includes('paddle') || lowerText.includes('cane') || lowerText.includes('belt')) return ICONS.impact;
+            if (lowerText.includes('tie') || lowerText.includes('bondage') || lowerText.includes('restrain') || lowerText.includes('cuffs') || lowerText.includes('rope')) return ICONS.bondage;
+            if (lowerText.includes('blindfold') || lowerText.includes('gag') || lowerText.includes('ice') || lowerText.includes('wax') || lowerText.includes('sensory') || lowerText.includes('tickle') || lowerText.includes('clip')) return ICONS.sensory;
+            if (lowerText.startsWith('special')) return ICONS.special;
+            return ICONS.command;
+        }
+
+        function triggerAction() {
+            const actionText = selectedDaresArray[currentPosition - 1] || "A moment of peace...";
+            
+            const iconHTML = getIconForDare(actionText.toLowerCase());
+            actionIconEl.innerHTML = iconHTML;
+            actionIconEl.classList.remove('opacity-0');
+
+            if (actionText === "SPECIAL_START_OVER") {
+                actionTitleEl.textContent = "Back to the Start!";
+                actionTextEl.textContent = "A fresh beginning for a new series of trials.";
+                setTimeout(() => {
+                    currentPosition = 0;
+                    updatePawnPosition();
+                    rollButton.disabled = false;
+                    actionIconEl.classList.add('opacity-0');
+                }, 2000);
+                return;
+            }
+
+            if (actionText === "SPECIAL_ROLL_AGAIN") {
+                actionTitleEl.textContent = "Roll Again!";
+                actionTextEl.textContent = "Fortune favors you... or does it? Rolling again in 3 seconds.";
+                setTimeout(rollDice, 3000);
+                return;
+            }
+            
+            actionTitleEl.textContent = `Square ${currentPosition}`;
+            actionTextEl.innerHTML = actionText;
+
+            if (currentPosition >= 100) {
+                 rollButton.disabled = true;
+                 rollButton.textContent = "Game Over";
+                 altTaskButton.classList.add('hidden');
+            } else {
+                rollButton.disabled = false;
+                altTaskButton.classList.remove('hidden');
+            }
+        }
+
+        function showAlternativeTask() {
+            const forfeit = FORFEITS[Math.floor(Math.random() * FORFEITS.length)];
+            actionTitleEl.textContent = "Alternative Task";
+            actionTextEl.innerHTML = `You have chosen a forfeit instead:<br><br><strong>${forfeit}</strong>`;
+            altTaskButton.classList.add('hidden');
+            actionIconEl.innerHTML = getIconForDare('command');
+        }
+
+        function populateModals() {
+            document.getElementById('rules-content').innerHTML = RULES.map((rule, i) => `<p><strong>${i > 0 ? i + '.' : ''}</strong> ${rule}</p>`).join('');
+            document.getElementById('dares-content').innerHTML = selectedDaresArray.map((text, i) => {
+                if (text.startsWith('SPECIAL')) return '';
+                return `<p><strong>${i + 1}:</strong> ${text}</p>`
+            }).join('');
+
+            document.getElementById('items-easy').innerHTML = ITEMS_EASY.map(item => `<li>${item}</li>`).join('');
+            document.getElementById('items-medium').innerHTML = ITEMS_MEDIUM.map(item => `<li>${item}</li>`).join('');
+            document.getElementById('items-hard').innerHTML = ITEMS_HARD.map(item => `<li>${item}</li>`).join('');
+        }
+
+        function showModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            document.getElementById(id).classList.add('flex');
+        }
+
+        function hideModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById(id).remove('flex');
+        }
+        
+        // --- INITIALIZE ---
+        rollButton.addEventListener('click', rollDice);
+        altTaskButton.addEventListener('click', showAlternativeTask);
+        populateModals(); // Populate the item lists on load
+    </script>
+</body>
+</html>
